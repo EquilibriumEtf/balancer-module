@@ -1,9 +1,8 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::contract::{BalancerApp, BalancerResult, APP_NAME};
-
+use crate::contract::{MODULE_NAME, BalancerApp, BalancerResult};
 use crate::msg::BalancerInstantiateMsg;
-use crate::state::{Config, CONFIG, COUNTS};
+use crate::state::{Config, CONFIG};
 
 /// Initial instantiation of the contract
 pub fn instantiate_handler(
@@ -15,20 +14,13 @@ pub fn instantiate_handler(
 ) -> BalancerResult {
     // Initial config
     let config: Config = Config {
-        max_count: msg.max_count,
+        dex: msg.dex,
+        max_deviation: msg.deviation,
     };
 
     CONFIG.save(deps.storage, &config)?;
 
-    if let Some(initial_counts) = msg.initial_counts {
-        for (addr, count) in initial_counts {
-            let addr = deps.api.addr_validate(addr.as_str())?;
-
-            COUNTS.save(deps.storage, &addr, &count)?;
-        }
-    }
-
     Ok(Response::new()
         .add_attribute("action", "instantiate")
-        .add_attribute("contract", APP_NAME))
+        .add_attribute("contract", MODULE_NAME))
 }

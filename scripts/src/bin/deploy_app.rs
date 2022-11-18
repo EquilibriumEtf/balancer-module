@@ -6,7 +6,7 @@ use interfaces::template::BalancerApp;
 // use template_app::msg::ConfigResponse;
 
 use semver::Version;
-use template_app::contract::{APP_NAME, APP_NAMESPACE};
+use template_app::contract::{MODULE_NAME, MODULE_NAMESPACE};
 
 // To deploy the app we need to get the memory and then register it
 // We can then deploy a test OS that uses that new app
@@ -30,7 +30,7 @@ pub fn deploy_app() -> anyhow::Result<()> {
     // );
 
     // Upload and register your module
-    let app_name = format!("{}:{}", APP_NAMESPACE, APP_NAME);
+    let app_name = format!("{}:{}", MODULE_NAMESPACE, MODULE_NAME);
     let _app = BalancerApp::new(&app_name, &chain);
     // version_control.upload_and_register_module(&mut app &app_version)?;
 

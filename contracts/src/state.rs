@@ -1,5 +1,4 @@
 use abstract_sdk::os::objects::AssetEntry;
-use abstract_os::objects::AssetEntry;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -7,7 +6,6 @@ use cosmwasm_std::{Decimal, Decimal256};
 use cw_storage_plus::{Item, Map};
 use crate::msg::WeightedAsset;
 
-use super::WeightedAsset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 /// State stores LP token address

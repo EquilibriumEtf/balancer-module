@@ -1,13 +1,9 @@
 use std::collections::BTreeMap;
 use std::ops::Sub;
 
-use abstract_sdk::{Dependency, Exchange};
-use abstract_sdk::cw20::query_supply;
 use abstract_sdk::os::dex::{AskAsset, OfferAsset};
 use abstract_sdk::os::objects::AssetEntry;
-use abstract_sdk::proxy::{
-    query_enabled_asset_names, query_holding_value, query_token_value, query_total_value,
-};
+use abstract_sdk::{AnsInterface, VaultInterface};
 use cosmwasm_std::{
     Addr, Coin, CosmosMsg, Decimal, Decimal256, Deps, DepsMut, Env, from_binary, MessageInfo,
     Order, Response, StdError, StdResult, to_binary, Uint128, Uint256, WasmMsg,
@@ -15,19 +11,10 @@ use cosmwasm_std::{
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_asset::{Asset, AssetInfo};
 
-use abstract_add_on::state::AddOnState;
-use abstract_os::{EXCHANGE, ICS20};
-use abstract_os::dex::{AskAsset, DexAction, OfferAsset, SwapRouter};
-use abstract_os::objects::{AssetEntry, ChannelEntry, ContractEntry, UncheckedChannelEntry};
-use abstract_os::objects::deposit_info::DepositInfo;
-use abstract_os::objects::fee::Fee;
-
-use crate::balancer::state::{ASSET_WEIGHTS, CONFIG, TOTAL};
-use crate::balancer::WeightedAsset;
 use crate::contract::{BalancerApp, BalancerResult};
 use crate::error::BalancerError;
 use crate::msg::{BalancerExecuteMsg, WeightedAsset};
-use crate::state::{ASSET_WEIGHTS, CONFIG, COUNTS, TOTAL};
+use crate::state::{ASSET_WEIGHTS, CONFIG,  TOTAL};
 
 // TODO: import from abstract
 pub const OSMOSIS: &str = "osmosis";
@@ -40,7 +27,7 @@ pub fn execute_handler(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    _app: BalancerApp,
+    balancer: BalancerApp,
     msg: BalancerExecuteMsg,
 ) -> BalancerResult {
     match msg {
@@ -50,12 +37,12 @@ pub fn execute_handler(
         }
         BalancerExecuteMsg::UpdateConfig { deviation, dex } => {
             update_config(deps, info, balancer, deviation, dex)
-        } // ExecuteMsg::SBalanceree { fee } => commands::set_fee(deps, info, dapp, fee),
+        } // ExecuteMsg::SetFee { fee } => commands::set_fee(deps, info, dapp, fee),
     }
 }
 
 /// Take the assets in the basket, calculate their deviations from the expected weights, and call upon the dex to perform the swaps
-pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, dapp: BalancerApp) -> BalancerResult {
+pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, balancer: BalancerApp) -> BalancerResult {
     let config = CONFIG.load(deps.storage)?;
     let dex = config.dex;
     let max_deviation = config.max_deviation;
@@ -64,30 +51,35 @@ pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, dapp: BalancerApp) -> Ba
         return Err(BalancerError::InvalidDex { dex });
     }
 
-    let base_state = dapp.load_state(deps.storage)?;
+    let vault = balancer.vault(deps.as_ref());
+
+    let base_state = balancer.load_state(deps.storage)?;
 
     // Retrieve the enabled assets
-    let (assets, _) = query_enabled_asset_names(deps.as_ref(), &base_state.proxy_address)?;
-    let assets = base_state.memory.query_assets(deps.as_ref(), assets)?;
+    let (assets, _) = vault.enabled_assets_list()?;
+    let assets = balancer.ans(deps.as_ref()).host().query_assets(&deps.querier, assets)?;
 
     let (offer_assets, ask_assets) =
-        determine_assets_to_swap(&deps, base_state.proxy_address, max_deviation, assets)?;
+        determine_assets_to_swap(&deps, balancer, base_state.proxy_address, max_deviation, assets)?;
 
-    Ok(Response::new().add_message(
-        // TODO: make use of Exchange trait
-        dapp.custom_swap(deps.as_ref(), dex, offer_assets, ask_assets, None)?,
-    ))
+    // Ok(Response::new().add_message(
+    //     // TODO: make use of Exchange trait
+    //     dapp.custom_swap(deps.as_ref(), dex, offer_assets, ask_assets, None)?,
+    // ))
+    Ok(Response::new())
 }
 
 /// Return arrays of offer and ask assets (those to sell and those to buy)
 fn determine_assets_to_swap(
     deps: &DepsMut,
+    balancer: BalancerApp,
     proxy_address: Addr,
     max_deviation: Decimal,
     assets: BTreeMap<AssetEntry, AssetInfo>,
 ) -> Result<(Vec<OfferAsset>, Vec<AskAsset>), BalancerError> {
+    let vault = balancer.vault(deps.as_ref());
     // Get the total value of the assets
-    let pool_value = query_total_value(deps.as_ref(), &proxy_address)?;
+    let pool_value = vault.query_total_value()?;
 
     // Empty pools are fully balanced
     if pool_value.is_zero() {
@@ -99,7 +91,7 @@ fn determine_assets_to_swap(
 
     for (asset_entry, asset_info) in assets {
         // actual weight of the asset (percent)
-        let actual_weight = calc_actual_weight(deps, &proxy_address, pool_value, &asset_entry)?;
+        let actual_weight = calc_actual_weight(deps, &balancer, pool_value, &asset_entry)?;
 
         // micro balance of the asset
         // TODO: do we need to know the asset decimals?
@@ -132,7 +124,8 @@ fn determine_assets_to_swap(
             let sell_amount = asset_balance.checked_mul(change_in_balance)?.ceil();
 
             // TODO: is atomics() correct?
-            offer_assets.push(AskAsset::new(asset_entry, sell_amount.atomics().try_into().unwrap()));
+            let offer_amount: Uint128 = sell_amount.atomics().try_into().unwrap();
+            offer_assets.push(AskAsset::new(asset_entry, offer_amount));
         } else {
             // The asset is underweight and must be bought
             // Buy ((expected / actual) - 1) * balance of the asset
@@ -140,10 +133,8 @@ fn determine_assets_to_swap(
             // If we are below the minimum threshold, our fixed_point calculation could be off due to overflow,
             // so we need to query the explicit value of the asset
             let buy_amount = if actual_weight.lt(&Decimal256::percent(MINIMUM_WEIGHT_THRESHOLD)) {
-                let single_token_value = query_token_value(
-                    deps.as_ref(),
-                    &proxy_address,
-                    &asset_entry.to_string(),
+                let single_token_value = vault.asset_value(
+                    &asset_entry,
                     None,
                 )?;
 
@@ -162,20 +153,23 @@ fn determine_assets_to_swap(
             };
 
             // TODO: is atomics() correct?
-            ask_assets.push(AskAsset::new(asset_entry, buy_amount.atomics().try_into().unwrap()));
+            let amount: Uint128 = buy_amount.atomics().try_into().unwrap();
+            ask_assets.push(AskAsset::new(asset_entry, amount));
         };
     }
     Ok((offer_assets, ask_assets))
 }
 
+/// Calculate the actual weight of the asset
+/// (asset(s) vaule / total pool value) * 100
 fn calc_actual_weight(
     deps: &DepsMut,
-    proxy_address: &Addr,
+    balancer: &BalancerApp,
     pool_value: Uint128,
     asset_name: &AssetEntry,
 ) -> Result<Decimal256, BalancerError> {
     let holding_value =
-        query_holding_value(deps.as_ref(), &proxy_address, &asset_name.to_string())?;
+        balancer.vault(deps.as_ref()).balance_value(asset_name)?;
 
     // Actual weight in percentage
     let actual_weight = Decimal256::from_ratio(holding_value, pool_value);
@@ -250,6 +244,7 @@ fn validate_deviation(percent: &Decimal) -> Result<(), BalancerError> {
     Ok(())
 }
 
+/// Only Osmosis dex is currently allowed
 fn validate_dex(dex: &String) -> Result<(), BalancerError> {
     if dex != OSMOSIS {
         return Err(BalancerError::InvalidDex {
