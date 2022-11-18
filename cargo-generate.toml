@@ -1,0 +1,26 @@
+#[placeholders.include_counter]
+#type = "bool"
+#prompt = "Include the counter example?"
+#default = false
+
+# ignore local folders
+[template]
+ignore = [
+  ".idea",
+  "target",
+  "contracts/target",
+  "scripts/target",
+  "schema",
+  "template-scripts",
+  "Cargo.lock",
+]
+include = [
+  "*.rs",
+  "contracts",
+  "contracts/src/handlers",
+  "interfaces",
+  "scripts"
+]
+
+[hooks]
+pre = ["template-scripts/pre-script.rhai"]
