@@ -2,8 +2,8 @@ use std::env::current_dir;
 use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
-use template_app_name::contract::BalancerApp;
-use template_app_name::msg::ConfigResponse;
+use balancer_module::contract::BalancerApp;
+use balancer_module::msg::ConfigResponse;
 
 fn main() {
     let mut out_dir = current_dir().unwrap();
