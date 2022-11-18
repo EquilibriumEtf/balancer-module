@@ -28,7 +28,15 @@
 //! ## Migration
 //! Migrating this contract is done by calling `ExecuteMsg::Upgrade` on [`crate::manager`] with `crate::TEMPLATE` as module.
 
-use cosmwasm_std::{Addr, Uint128};
+use abstract_sdk::os::objects::AssetEntry;
+use cosmwasm_std::{Addr, Decimal, Uint128};
+
+#[cosmwasm_schema::cw_serde]
+pub struct WeightedAsset {
+    /// Weight of the asset
+    pub weight: u64,
+}
+
 
 /// Migrate msg
 #[cosmwasm_schema::cw_serde]
@@ -37,53 +45,44 @@ pub struct BalancerMigrateMsg {}
 /// Init msg
 #[cosmwasm_schema::cw_serde]
 pub struct BalancerInstantiateMsg {
-    /// The initial value for max_count
-    pub max_count: Uint128,
-    /// Initial user counts
-    pub initial_counts: Option<Vec<(String, Uint128)>>,
+    /// Weights of the assets in the etf
+    pub asset_weights: Vec<(AssetEntry, WeightedAsset)>,
+    /// The allowed deviation from the target ratio
+    pub deviation: Decimal,
+    /// The dex to use for swaps
+    pub dex: String,
 }
 
 #[cosmwasm_schema::cw_serde]
 pub enum BalancerExecuteMsg {
-    /// Update the configuration for this contract
-    UpdateConfig { max_count: Option<Uint128> },
-    /// Add a count of 1 to the calling user
-    Increment {},
+    /// Rebalance the etf
+    Rebalance {},
+    /// Update asset weights
+    UpdateAssetWeights {
+        to_add: Option<Vec<(AssetEntry, WeightedAsset)>>,
+        to_remove: Option<Vec<AssetEntry>>,
+    },
+    /// Update config
+    UpdateConfig {
+        deviation: Option<Decimal>,
+        dex: Option<String>,
+    },
 }
 
 #[cosmwasm_schema::cw_serde]
+// #[derive(QueryResponses)]
 pub enum BalancerQueryMsg {
     /// Returns [`ConfigResponse`]
     Config {},
-    /// Returns the counts of the users
-    /// Returns [`UserCountsResponse`]
-    UserCountList {
-        page_token: Option<String>,
-        page_size: Option<u8>,
-    },
-    UserCounts {
-        users: Vec<Addr>,
-    },
-    /// Return the calling user's count if any
-    UserCount {
-        user: Addr,
-    },
+    // /// Returns [`AssetWeightsResponse`]
+    // /// Returns the actual weights of the assets in the etf
+    // AssetWeights {},
 }
 
-// #### RESPONSES ####
-
-#[cosmwasm_schema::cw_serde]
-pub struct UserCountResponse {
-    pub user: Addr,
-    pub count: Uint128,
-}
-
-#[cosmwasm_schema::cw_serde]
-pub struct UserCountsResponse {
-    pub counts: Vec<(Addr, Uint128)>,
-}
 
 #[cosmwasm_schema::cw_serde]
 pub struct ConfigResponse {
-    pub max_count: Uint128,
+    pub asset_weights: Vec<(AssetEntry, WeightedAsset)>,
+    pub max_deviation: Decimal,
 }
+

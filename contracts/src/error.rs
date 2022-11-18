@@ -1,5 +1,6 @@
 use abstract_app::AppError;
-use cosmwasm_std::{OverflowError, StdError};
+use abstract_add_on::AddOnError;
+use cosmwasm_std::{CheckedFromRatioError, Decimal, DecimalRangeExceeded, OverflowError, StdError};
 use cw_controllers::AdminError;
 use thiserror::Error;
 
@@ -15,11 +16,60 @@ pub enum BalancerError {
     DappError(#[from] AppError),
 
     #[error("{0}")]
-    OverflowError(#[from] OverflowError),
+    Overflow(#[from] OverflowError),
 
-    #[error("The configured max count has an error, {}", msg)]
-    MaxCountError { msg: String },
+    #[error("{0}")]
+    CheckedFromRatioError(#[from] CheckedFromRatioError),
 
-    #[error("The update would exceed the configured max count")]
-    ExceededMaxCount {},
+    #[error("{0}")]
+    DecimalError(#[from] DecimalRangeExceeded),
+
+    #[error("This contract does not implement the cw20 swap function")]
+    NoSwapAvailable {},
+
+    #[error("The provided token: {} is not this vault's LP token", token)]
+    NotLPToken { token: String },
+
+    #[error("The asset you wished to remove: {} is not part of the vector", asset)]
+    AssetNotPresent { asset: String },
+
+    #[error("The asset you wished to add: {} is already part of the vector", asset)]
+    AssetAlreadyPresent { asset: String },
+
+    #[error("The provided token is not the base token")]
+    WrongToken {},
+
+    #[error("The provided native coin is not the same as the claimed deposit")]
+    WrongNative {},
+
+    #[error("It's required to use cw20 send message to add liquidity with cw20 tokens")]
+    NotUsingCW20Hook {},
+
+    #[error("The provided fee is invalid")]
+    InvalidFee {},
+
+    #[error("The deposit asset {0} is not the base asset for holding value calculation")]
+    DepositAssetNotBase(String),
+
+    #[error("The actual amount of tokens transferred is different from the claimed amount.")]
+    InvalidAmount {},
+
+    #[error("Invalid dex: {}", dex)]
+    InvalidDex { dex: String },
+
+    // invalid deviation
+    #[error("The provided deviation is invalid")]
+    InvalidDeviation { deviation: Decimal },
+
+    #[error("Too many assets")]
+    TooManyAssets {},
+
+    #[error("Max in ratio")]
+    MaxInRatio {},
+
+    #[error("Max out ratio")]
+    MaxOutRatio {},
+
+    #[error("Empty pool")]
+    EmptyPool {},
 }
