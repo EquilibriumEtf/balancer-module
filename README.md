@@ -1,8 +1,9 @@
 # Balancer
-This is a smart-contract app using [Abstract-OS](https://abstract.money).
+This is a smart-contract app built using [Abstract-OS](https://abstract.money).
 
 ## Features
--
+- Autobalance Abstract OS portfolio
+- Dex integration with Osmosis
 
 ## Commands
 - `cargo build`: Build the app
@@ -14,4 +15,4 @@ This is a smart-contract app using [Abstract-OS](https://abstract.money).
 
 ## Deployment
 By running `cargo deploy`, the app will be deployed to Abstract Version Control under
-the identifier: `{{username}}:{{app_name}}`.
+the identifier: `equlibrium:balancer`.
