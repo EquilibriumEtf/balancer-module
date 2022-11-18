@@ -11,7 +11,7 @@
       ],
       "properties": {
         "request": {
-          "$ref": "#/definitions/{{ app_execute_msg }}"
+          "$ref": "#/definitions/BalancerModuleExecuteMsg"
         }
       },
       "additionalProperties": false
@@ -138,7 +138,7 @@
         }
       ]
     },
-    "{{ app_execute_msg }}": {
+    "BalancerModuleExecuteMsg": {
       "oneOf": [
         {
           "description": "Update the configuration for this contract",

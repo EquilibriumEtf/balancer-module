@@ -1,6 +1,6 @@
 [package]
 # TODO rename
-name = "template-app-name"
+name = "balancer-module"
 version.workspace = true
 authors.workspace = true
 description.workspace = true

@@ -10,7 +10,7 @@
       ],
       "properties": {
         "app": {
-          "$ref": "#/definitions/{{ app_query_msg }}"
+          "$ref": "#/definitions/BalancerModuleQueryMsg"
         }
       },
       "additionalProperties": false
@@ -66,7 +66,7 @@
         }
       ]
     },
-    "{{ app_query_msg }}": {
+    "BalancerModuleQueryMsg": {
       "oneOf": [
         {
           "description": "Returns [`ConfigResponse`]",

@@ -20,7 +20,7 @@
       "description": "custom instantiate msg attributes",
       "allOf": [
         {
-          "$ref": "#/definitions/{{ app_instantiate_msg }}"
+          "$ref": "#/definitions/BalancerModuleInstantiateMsg"
         }
       ]
     }
@@ -40,7 +40,7 @@
       },
       "additionalProperties": false
     },
-    "{{ app_instantiate_msg }}": {
+    "BalancerModuleInstantiateMsg": {
       "description": "Init msg",
       "type": "object",
       "required": [

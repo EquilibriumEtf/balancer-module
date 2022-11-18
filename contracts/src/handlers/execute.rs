@@ -1,23 +1,23 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
 
-use crate::contract::{TemplateApp, TemplateResult};
-use crate::error::TemplateError;
-use crate::msg::TemplateExecuteMsg;
+use crate::contract::{BalancerModuleApp, BalancerModuleResult};
+use crate::error::BalancerModuleError;
+use crate::msg::BalancerModuleExecuteMsg;
 use crate::state::{CONFIG, COUNTS};
 
-/// Handle the `TemplateExecuteMsg`s sent to this app.
+/// Handle the ` BalancerModuleExecuteMsg`s sent to this app.
 pub fn execute_handler(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    app: TemplateApp,
-    msg: TemplateExecuteMsg,
-) -> TemplateResult {
+    app: BalancerModuleApp,
+    msg: BalancerModuleExecuteMsg,
+) -> BalancerModuleResult {
     match msg {
-        TemplateExecuteMsg::UpdateConfig { max_count } => {
+        BalancerModuleExecuteMsg::UpdateConfig { max_count } => {
             update_config(deps, info, app, max_count)
         }
-        TemplateExecuteMsg::Increment {} => increment_sender(deps, info, app),
+        BalancerModuleExecuteMsg::Increment {} => increment_sender(deps, info, app),
     }
 }
 
@@ -25,16 +25,16 @@ pub fn execute_handler(
 pub fn update_config(
     deps: DepsMut,
     msg_info: MessageInfo,
-    dapp: TemplateApp,
+    dapp: BalancerModuleApp,
     max_count: Option<Uint128>,
-) -> TemplateResult {
+) -> BalancerModuleResult {
     dapp.admin.assert_admin(deps.as_ref(), &msg_info.sender)?;
 
     let mut config = CONFIG.load(deps.storage)?;
 
     if let Some(new_max_count) = max_count {
         if new_max_count.gt(&config.max_count) {
-            return Err(TemplateError::MaxCountError {
+            return Err(BalancerModuleError::MaxCountError {
                 msg: "Max count must be greater than previous setting".into(),
             });
         }
@@ -51,8 +51,8 @@ pub fn update_config(
 pub fn increment_sender(
     deps: DepsMut,
     msg_info: MessageInfo,
-    _dapp: TemplateApp,
-) -> TemplateResult {
+    _dapp: BalancerModuleApp,
+) -> BalancerModuleResult {
     let user = msg_info.sender;
     let max_count = CONFIG.load(deps.storage)?.max_count;
 
@@ -60,7 +60,7 @@ pub fn increment_sender(
         Some(old) => {
             let new_val = old.checked_add(Uint128::one())?;
             if new_val > max_count {
-                return Err(TemplateError::ExceededMaxCount {});
+                return Err(BalancerModuleError::ExceededMaxCount {});
             };
             Ok(new_val)
         }
