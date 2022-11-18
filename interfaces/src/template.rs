@@ -8,21 +8,21 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use template_app::contract::APP_NAME;
 use template_app::msg::{
-    BalancerModuleExecuteMsg, BalancerModuleInstantiateMsg, BalancerModuleMigrateMsg,
-    BalancerModuleQueryMsg,
+    BalancerExecuteMsg, BalancerInstantiateMsg, BalancerMigrateMsg,
+    BalancerQueryMsg,
 };
 
 /// Contract wrapper for deploying with BOOT
 /// @TODO don't wrap using base here, but in the abstract-boot layer
-pub type BalancerModuleApp<Chain> = AbstractApp<
+pub type BalancerApp<Chain> = AbstractApp<
     Chain,
-    base::ExecuteMsg<BaseExecuteMsg, BalancerModuleExecuteMsg>,
-    base::InstantiateMsg<BalancerModuleInstantiateMsg>,
-    base::QueryMsg<BaseQueryMsg, BalancerModuleQueryMsg>,
-    base::MigrateMsg<BalancerModuleMigrateMsg>,
+    base::ExecuteMsg<BaseExecuteMsg, BalancerExecuteMsg>,
+    base::InstantiateMsg<BalancerInstantiateMsg>,
+    base::QueryMsg<BaseQueryMsg, BalancerQueryMsg>,
+    base::MigrateMsg<BalancerMigrateMsg>,
 >;
 
-impl<Chain: TxHandler + Clone> BalancerModuleApp<Chain>
+impl<Chain: TxHandler + Clone> BalancerApp<Chain>
 where
     TxResponse<Chain>: IndexResponse,
 {
@@ -43,7 +43,7 @@ where
     /// Temporary helper to query the app explicitly
     pub fn query_app<T: Serialize + DeserializeOwned>(
         &self,
-        query_msg: BalancerModuleQueryMsg,
+        query_msg: BalancerQueryMsg,
     ) -> Result<T, BootError> {
         self.query(&base::QueryMsg::App(query_msg))
     }
@@ -59,7 +59,7 @@ where
     /// Temporary helper to execute the app explicitly
     pub fn execute_app(
         &self,
-        execute_msg: BalancerModuleExecuteMsg,
+        execute_msg: BalancerExecuteMsg,
         coins: Option<&[Coin]>,
     ) -> Result<TxResponse<Chain>, BootError> {
         self.execute(&base::ExecuteMsg::App(execute_msg), coins)

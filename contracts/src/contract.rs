@@ -3,23 +3,23 @@ use abstract_app::AppContract;
 use abstract_sdk::os::EXCHANGE;
 use cosmwasm_std::Response;
 
-use crate::error::BalancerModuleError;
+use crate::error::BalancerError;
 use crate::handlers::{self};
 use crate::msg::{
-    BalancerModuleExecuteMsg, BalancerModuleInstantiateMsg, BalancerModuleMigrateMsg,
-    BalancerModuleQueryMsg,
+    BalancerExecuteMsg, BalancerInstantiateMsg, BalancerMigrateMsg,
+    BalancerQueryMsg,
 };
 
 // As an app writer, the only changes necessary to this file are with the handlers and API dependencies on the `TEMPLATE_APP` const.
-pub type BalancerModuleApp = AppContract<
-    BalancerModuleError,
-    BalancerModuleExecuteMsg,
-    BalancerModuleInstantiateMsg,
-    BalancerModuleQueryMsg,
-    BalancerModuleMigrateMsg,
+pub type BalancerApp = AppContract<
+    BalancerError,
+    BalancerExecuteMsg,
+    BalancerInstantiateMsg,
+    BalancerQueryMsg,
+    BalancerMigrateMsg,
 >;
 
-pub type BalancerModuleResult = Result<Response, BalancerModuleError>;
+pub type BalancerResult = Result<Response, BalancerError>;
 
 /// The namespace for the app, like "abstract" -> "abstract:template"
 pub const APP_NAMESPACE: &str = "equilibrium";
@@ -34,7 +34,7 @@ pub const EXAMPLE_REPLY_ID: u64 = 1;
 /// Used as the foundation for building your app.
 /// All entrypoints are executed through this const (`instantiate`, `query`, `execute`, `migrate`)
 /// The `dependencies` are Abstract API dependencies in the format: Vec(`namespace:contract_name`)
-const APP: BalancerModuleApp = BalancerModuleApp::new(APP_NAME, APP_VERSION)
+const APP: BalancerApp = BalancerApp::new(APP_NAME, APP_VERSION)
     .with_instantiate(handlers::instantiate_handler)
     .with_query(handlers::query_handler)
     .with_execute(handlers::execute_handler)
@@ -45,4 +45,4 @@ const APP: BalancerModuleApp = BalancerModuleApp::new(APP_NAME, APP_VERSION)
 // don't export endpoints when imported as library
 #[cfg(not(feature = "library"))]
 // Export the endpoints for this contract
-export_endpoints!(APP, BalancerModuleApp);
+export_endpoints!(APP, BalancerApp);

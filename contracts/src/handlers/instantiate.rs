@@ -1,8 +1,8 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::contract::{BalancerModuleApp, BalancerModuleResult, APP_NAME};
+use crate::contract::{BalancerApp, BalancerResult, APP_NAME};
 
-use crate::msg::BalancerModuleInstantiateMsg;
+use crate::msg::BalancerInstantiateMsg;
 use crate::state::{Config, CONFIG, COUNTS};
 
 /// Initial instantiation of the contract
@@ -10,9 +10,9 @@ pub fn instantiate_handler(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _app: BalancerModuleApp,
-    msg: BalancerModuleInstantiateMsg,
-) -> BalancerModuleResult {
+    _app: BalancerApp,
+    msg: BalancerInstantiateMsg,
+) -> BalancerResult {
     // Initial config
     let config: Config = Config {
         max_count: msg.max_count,

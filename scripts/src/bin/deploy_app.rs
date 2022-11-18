@@ -2,7 +2,7 @@ use std::env;
 
 use boot_core::{instantiate_daemon_env, networks::juno::UNI_5};
 
-use interfaces::template::BalancerModuleApp;
+use interfaces::template::BalancerApp;
 // use template_app::msg::ConfigResponse;
 
 use semver::Version;
@@ -31,13 +31,13 @@ pub fn deploy_app() -> anyhow::Result<()> {
 
     // Upload and register your module
     let app_name = format!("{}:{}", APP_NAMESPACE, APP_NAME);
-    let _app = BalancerModuleApp::new(&app_name, &chain);
+    let _app = BalancerApp::new(&app_name, &chain);
     // version_control.upload_and_register_module(&mut app &app_version)?;
 
     // Example queries
     // app.query_base(BaseQueryMsg::Admin {})?;
 
-    // let app_config: ConfigResponse = app.query_app( BalancerModuleQueryMsg::Config {})?;
+    // let app_config: ConfigResponse = app.query_app( BalancerQueryMsg::Config {})?;
 
     // TODO: Attach to an OS
 

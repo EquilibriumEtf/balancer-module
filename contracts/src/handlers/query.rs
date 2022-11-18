@@ -1,5 +1,5 @@
-use crate::contract::BalancerModuleApp;
-use crate::msg::{BalancerModuleQueryMsg, ConfigResponse, UserCountResponse, UserCountsResponse};
+use crate::contract::BalancerApp;
+use crate::msg::{BalancerQueryMsg, ConfigResponse, UserCountResponse, UserCountsResponse};
 use crate::state::{CONFIG, COUNTS};
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, Order, StdResult, Uint128};
 use cw_storage_plus::Bound;
@@ -11,16 +11,16 @@ const MAX_PAGE_SIZE: u8 = 20;
 pub fn query_handler(
     deps: Deps,
     env: Env,
-    _app: &BalancerModuleApp,
-    msg: BalancerModuleQueryMsg,
+    _app: &BalancerApp,
+    msg: BalancerQueryMsg,
 ) -> StdResult<Binary> {
     match msg {
-        BalancerModuleQueryMsg::Config {} => to_binary(&query_config(deps, env)?),
-        BalancerModuleQueryMsg::UserCount { user } => to_binary(&query_count(deps, env, user)?),
-        BalancerModuleQueryMsg::UserCounts { users } => {
+        BalancerQueryMsg::Config {} => to_binary(&query_config(deps, env)?),
+        BalancerQueryMsg::UserCount { user } => to_binary(&query_count(deps, env, user)?),
+        BalancerQueryMsg::UserCounts { users } => {
             to_binary(&query_user_counts(deps, env, users)?)
         }
-        BalancerModuleQueryMsg::UserCountList {
+        BalancerQueryMsg::UserCountList {
             page_token,
             page_size,
         } => to_binary(&query_user_count_list(deps, env, page_token, page_size)?),

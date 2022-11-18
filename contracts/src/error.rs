@@ -4,7 +4,7 @@ use cw_controllers::AdminError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
-pub enum BalancerModuleError {
+pub enum BalancerError {
     #[error("{0}")]
     Std(#[from] StdError),
 

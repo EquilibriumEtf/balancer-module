@@ -1,13 +1,13 @@
 use cosmwasm_std::{DepsMut, Env, Reply};
 
-use crate::contract::{BalancerModuleApp, BalancerModuleResult};
+use crate::contract::{BalancerApp, BalancerResult};
 
 pub fn example_reply_handler(
     _deps: DepsMut,
     _env: Env,
-    _app: BalancerModuleApp,
+    _app: BalancerApp,
     _reply: Reply,
-) -> BalancerModuleResult {
+) -> BalancerResult {
     // Logic to execute on example reply
     todo!()
 }
