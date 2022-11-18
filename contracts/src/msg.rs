@@ -29,7 +29,7 @@
 //! Migrating this contract is done by calling `ExecuteMsg::Upgrade` on [`crate::manager`] with `crate::TEMPLATE` as module.
 
 use abstract_sdk::os::objects::AssetEntry;
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{ Decimal};
 
 #[cosmwasm_schema::cw_serde]
 pub struct WeightedAsset {

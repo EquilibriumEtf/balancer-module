@@ -1,8 +1,10 @@
 use std::env;
+use abstract_boot::version_control::VersionControl;
 
 use boot_core::{instantiate_daemon_env, networks::juno::UNI_5};
+use cosmwasm_std::Addr;
 
-use interfaces::template::BalancerApp;
+use interfaces::balancer::BalancerApp;
 // use template_app::msg::ConfigResponse;
 
 use semver::Version;
@@ -15,24 +17,24 @@ const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn deploy_app() -> anyhow::Result<()> {
     let network = UNI_5;
-    let _app_version = Version::parse(APP_VERSION)?;
+    let app_version = Version::parse(APP_VERSION)?;
 
     // Setup the environment
     let (_, _sender, chain) = instantiate_daemon_env(network)?;
 
     // Load Abstract Version Control
-    let _version_control_address: String =
+    let version_control_address: String =
         env::var("VERSION_CONTROL_ADDRESS").expect("VERSION_CONTROL_ADDRESS must be set");
 
-    // let version_control = VersionControl::load(
-    //     &chain,
-    //     &Addr::unchecked(version_control_address),
-    // );
+    let version_control = VersionControl::load(
+        &chain,
+        &Addr::unchecked(version_control_address),
+    );
 
     // Upload and register your module
     let app_name = format!("{}:{}", MODULE_NAMESPACE, MODULE_NAME);
-    let _app = BalancerApp::new(&app_name, &chain);
-    // version_control.upload_and_register_module(&mut app &app_version)?;
+    let mut app = BalancerApp::new(&app_name, &chain);
+    version_control.upload_and_register_module(&mut app,&app_version)?;
 
     // Example queries
     // app.query_base(BaseQueryMsg::Admin {})?;

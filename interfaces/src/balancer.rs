@@ -7,10 +7,7 @@ use cosmwasm_std::Coin;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use template_app::contract::MODULE_NAME;
-use template_app::msg::{
-    BalancerExecuteMsg, BalancerInstantiateMsg, BalancerMigrateMsg,
-    BalancerQueryMsg,
-};
+use template_app::msg::{BalancerExecuteMsg, BalancerInstantiateMsg, BalancerMigrateMsg, BalancerQueryMsg};
 
 /// Contract wrapper for deploying with BOOT
 /// @TODO don't wrap using base here, but in the abstract-boot layer

@@ -2,7 +2,7 @@ use abstract_sdk::os::objects::AssetEntry;
 use crate::contract::BalancerApp;
 use crate::msg::{BalancerQueryMsg, ConfigResponse,  WeightedAsset};
 use crate::state::{ASSET_WEIGHTS, CONFIG};
-use cosmwasm_std::{to_binary, Addr, Binary, Deps, Env, Order, StdResult, Uint128, StdError};
+use cosmwasm_std::{to_binary, Binary, Deps, Env, Order, StdResult, StdError};
 use cw_storage_plus::Bound;
 
 const DEFAULT_PAGE_SIZE: u8 = 5;
