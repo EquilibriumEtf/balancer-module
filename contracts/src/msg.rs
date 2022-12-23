@@ -28,8 +28,11 @@
 //! ## Migration
 //! Migrating this contract is done by calling `ExecuteMsg::Upgrade` on [`crate::manager`] with `crate::TEMPLATE` as module.
 
+use abstract_sdk::os::app;
 use abstract_sdk::os::objects::AssetEntry;
 use cosmwasm_std::{ Decimal};
+
+pub const BALANCER: &str = "equilibrium:balancer";
 
 #[cosmwasm_schema::cw_serde]
 pub struct WeightedAsset {
@@ -41,6 +44,10 @@ pub struct WeightedAsset {
 /// Migrate msg
 #[cosmwasm_schema::cw_serde]
 pub struct BalancerMigrateMsg {}
+
+/// Impls for being able to call methods on the autocompounder app directly
+impl app::AppExecuteMsg for BalancerExecuteMsg {}
+impl app::AppQueryMsg for BalancerQueryMsg {}
 
 /// Init msg
 #[cosmwasm_schema::cw_serde]

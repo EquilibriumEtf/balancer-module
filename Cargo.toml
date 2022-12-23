@@ -15,5 +15,20 @@ description = "A short description of my package"
 
 [workspace.dependencies]
 cosmwasm-std = { version = "1.1" }
-abstract-os = "0.2.0-beta.4"
+abstract-os = "0.3.0-beta.2"
+abstract-sdk = "0.3.0-beta.2"
 cw-asset = {version = "2.2.0"}
+
+cw-controllers = { version = "0.16.0" }
+cosmwasm-schema = { version = "1.1" }
+cw-storage-plus = "0.16.0"
+cw2 = "0.16.0"
+cw20 = { version = "0.16.0" }
+cw20-base = { version = "0.16.0", features = ["library"] }
+schemars = "0.8.1"
+serde = { version = "1.0.103", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.21" }
+semver = "1.0.0"
+lazy_static = "1.4.0"
+
+abstract-app = { version = "0.3.0-beta.2", features = ["library"] }

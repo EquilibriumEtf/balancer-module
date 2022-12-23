@@ -3,6 +3,7 @@ pub mod error;
 mod handlers;
 pub mod msg;
 mod state;
+mod dependencies;
 
 // TODO; FIX
 // #[cfg(test)]

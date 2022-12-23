@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use abstract_sdk::os::dex::{AskAsset, OfferAsset};
 use abstract_sdk::os::objects::AssetEntry;
-use abstract_sdk::{AnsInterface, VaultInterface};
+use abstract_sdk::{VaultInterface};
+use abstract_sdk::base::features::AbstractNameService;
 use cosmwasm_std::{
     Addr, Decimal, Decimal256, Deps, DepsMut, Env, MessageInfo,
     Response, StdResult, Uint128, Uint256,
@@ -28,6 +29,7 @@ pub fn execute_handler(
     balancer: BalancerApp,
     msg: BalancerExecuteMsg,
 ) -> BalancerResult {
+
     match msg {
         BalancerExecuteMsg::Rebalance {} => rebalance(deps, info, balancer),
         BalancerExecuteMsg::UpdateAssetWeights { to_add, to_remove } => {
@@ -55,7 +57,7 @@ pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, balancer: BalancerApp) -
 
     // Retrieve the enabled assets
     let (assets, _) = vault.enabled_assets_list()?;
-    let assets = balancer.ans(deps.as_ref()).host().query_assets(&deps.querier, assets)?;
+    let assets = balancer.name_service(deps.as_ref()).host().query_assets(&deps.querier, assets)?;
 
     let (offer_assets, ask_assets) =
         determine_assets_to_swap(&deps, balancer, base_state.proxy_address, max_deviation, assets)?;
