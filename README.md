@@ -15,4 +15,4 @@ This is a smart-contract app built using [Abstract-OS](https://abstract.money).
 
 ## Deployment
 By running `cargo deploy`, the app will be deployed to Abstract Version Control under
-the identifier: `equlibrium:balancer`.
+the identifier: `equilibrium:balancer`.
