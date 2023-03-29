@@ -1,5 +1,7 @@
 use abstract_app::AppError;
+use abstract_sdk::{core::AbstractError, AbstractSdkError};
 use cosmwasm_std::{CheckedFromRatioError, Decimal, DecimalRangeExceeded, OverflowError, StdError};
+use cw_asset::AssetError;
 use cw_controllers::AdminError;
 use thiserror::Error;
 
@@ -13,6 +15,15 @@ pub enum BalancerError {
 
     #[error("{0}")]
     DappError(#[from] AppError),
+
+    #[error("{0}")]
+    Sdk(#[from] AbstractSdkError),
+
+    #[error("{0}")]
+    Abstract(#[from] AbstractError),
+
+    #[error("{0}")]
+    Asset(#[from] AssetError),
 
     #[error("{0}")]
     Overflow(#[from] OverflowError),

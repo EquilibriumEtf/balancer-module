@@ -1,5 +1,5 @@
-use abstract_sdk::os::EXCHANGE;
-use abstract_sdk::os::objects::dependency::StaticDependency;
+use abstract_sdk::core::objects::dependency::StaticDependency;
+use dex::EXCHANGE;
 
 const DEX_DEP: StaticDependency = StaticDependency::new(EXCHANGE, &[">=0.3.0"]);
 
@@ -8,8 +8,8 @@ pub const BALANCER_DEPS: &[StaticDependency] = &[DEX_DEP];
 
 #[cfg(test)]
 mod tests {
-    use semver::Comparator;
     use super::*;
+    use semver::Comparator;
 
     #[test]
     fn test_dependencies() {

@@ -28,9 +28,10 @@
 //! ## Migration
 //! Migrating this contract is done by calling `ExecuteMsg::Upgrade` on [`crate::manager`] with `crate::TEMPLATE` as module.
 
-use abstract_sdk::os::app;
-use abstract_sdk::os::objects::AssetEntry;
-use cosmwasm_std::{ Decimal};
+use abstract_sdk::core::app;
+use abstract_sdk::core::objects::AssetEntry;
+use cosmwasm_schema::QueryResponses;
+use cosmwasm_std::Decimal;
 
 pub const BALANCER: &str = "equilibrium:balancer";
 
@@ -39,7 +40,6 @@ pub struct WeightedAsset {
     /// Weight of the asset
     pub weight: u64,
 }
-
 
 /// Migrate msg
 #[cosmwasm_schema::cw_serde]
@@ -77,19 +77,15 @@ pub enum BalancerExecuteMsg {
 }
 
 #[cosmwasm_schema::cw_serde]
-// #[derive(QueryResponses)]
+#[derive(QueryResponses)]
 pub enum BalancerQueryMsg {
     /// Returns [`ConfigResponse`]
+    #[returns(ConfigResponse)]
     Config {},
-    // /// Returns [`AssetWeightsResponse`]
-    // /// Returns the actual weights of the assets in the etf
-    // AssetWeights {},
 }
-
 
 #[cosmwasm_schema::cw_serde]
 pub struct ConfigResponse {
     pub asset_weights: Vec<(AssetEntry, WeightedAsset)>,
     pub max_deviation: Decimal,
 }
-

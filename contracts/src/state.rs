@@ -1,4 +1,4 @@
-use abstract_sdk::os::objects::AssetEntry;
+use abstract_sdk::core::objects::AssetEntry;
 use cosmwasm_std::Decimal;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -20,4 +20,4 @@ pub const CONFIG: Item<Config> = Item::new("\u{0}{5}config");
 pub const TOTAL: Item<u64> = Item::new("\u{0}{5}total");
 
 // Could use a SnapshotMap
-pub const ASSET_WEIGHTS: Map<AssetEntry, WeightedAsset> = Map::new("\u{0}{6}assets");
+pub const ASSET_WEIGHTS: Map<&AssetEntry, WeightedAsset> = Map::new("\u{0}{6}assets");

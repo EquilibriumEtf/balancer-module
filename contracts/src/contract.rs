@@ -1,31 +1,32 @@
+use crate::dependencies::BALANCER_DEPS;
 use abstract_app::export_endpoints;
 use abstract_app::AppContract;
-use abstract_sdk::os::EXCHANGE;
+
 use cosmwasm_std::Response;
-use crate::dependencies::BALANCER_DEPS;
 
 use crate::error::BalancerError;
 use crate::handlers::{self};
-use crate::msg::{BALANCER, BalancerExecuteMsg, BalancerInstantiateMsg, BalancerMigrateMsg, BalancerQueryMsg};
+use crate::msg::{
+    BalancerExecuteMsg, BalancerInstantiateMsg, BalancerMigrateMsg, BalancerQueryMsg, BALANCER,
+};
 
 // As an app writer, the only changes necessary to this file are with the handlers and API dependencies on the `TEMPLATE_APP` const.
 pub type BalancerApp = AppContract<
     BalancerError,
-    BalancerExecuteMsg,
     BalancerInstantiateMsg,
+    BalancerExecuteMsg,
     BalancerQueryMsg,
     BalancerMigrateMsg,
 >;
 
-pub type BalancerResult = Result<Response, BalancerError>;
+pub type BalancerResult<T = Response> = Result<T, BalancerError>;
 
 /// The namespace for the app, like "abstract" -> "abstract:template"
 pub const MODULE_NAMESPACE: &str = "equilibrium";
 /// The name of the app, excluding the namespace
-pub const MODULE_NAME: &str = "balancer";
+pub const BALANCER_ID: &str = "balancer";
 /// The initial version of the app, which will use the package version if not altered
 const MODULE_VERSION: &str = env!("CARGO_PKG_VERSION");
-
 
 /// Used as the foundation for building your app.
 /// All entrypoints are executed through this const (`instantiate`, `query`, `execute`, `migrate`)

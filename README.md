@@ -1,8 +1,8 @@
-# Balancer
-This is a smart-contract app built using [Abstract-OS](https://abstract.money).
+# Balancer (WIP)
+This is a smart-contract app built using [Abstract](https://abstract.money).
 
 ## Features
-- Autobalance Abstract OS portfolio
+- Autobalance Abstract portfolio
 - Dex integration with Osmosis
 
 ## Commands

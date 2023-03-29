@@ -1,6 +1,6 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
-use crate::contract::{MODULE_NAME, BalancerApp, BalancerResult};
+use crate::contract::{BalancerApp, BalancerResult, BALANCER_ID};
 use crate::msg::BalancerInstantiateMsg;
 use crate::state::{Config, CONFIG};
 
@@ -22,5 +22,5 @@ pub fn instantiate_handler(
 
     Ok(Response::new()
         .add_attribute("action", "instantiate")
-        .add_attribute("contract", MODULE_NAME))
+        .add_attribute("contract", BALANCER_ID))
 }

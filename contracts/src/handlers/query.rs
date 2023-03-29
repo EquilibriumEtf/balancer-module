@@ -1,12 +1,8 @@
-use abstract_sdk::os::objects::AssetEntry;
-use crate::contract::BalancerApp;
-use crate::msg::{BalancerQueryMsg, ConfigResponse,  WeightedAsset};
+use crate::contract::{BalancerApp, BalancerResult};
+use crate::msg::{BalancerQueryMsg, ConfigResponse, WeightedAsset};
 use crate::state::{ASSET_WEIGHTS, CONFIG};
-use cosmwasm_std::{to_binary, Binary, Deps, Env, Order, StdResult, StdError};
-use cw_storage_plus::Bound;
-
-const DEFAULT_PAGE_SIZE: u8 = 5;
-const MAX_PAGE_SIZE: u8 = 20;
+use abstract_sdk::core::objects::AssetEntry;
+use cosmwasm_std::{to_binary, Binary, Deps, Env, Order, StdError, StdResult};
 
 /// Handle queries sent to this app.
 pub fn query_handler(
@@ -14,12 +10,11 @@ pub fn query_handler(
     env: Env,
     _app: &BalancerApp,
     msg: BalancerQueryMsg,
-) -> StdResult<Binary> {
+) -> BalancerResult<Binary> {
     match msg {
-        BalancerQueryMsg::Config {} => to_binary(&query_config(deps, env)?),
+        BalancerQueryMsg::Config {} => to_binary(&query_config(deps, env)?).map_err(Into::into),
     }
 }
-
 
 pub fn query_config(deps: Deps, _env: Env) -> StdResult<ConfigResponse> {
     let state = CONFIG.load(deps.storage)?;
