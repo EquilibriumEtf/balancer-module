@@ -164,7 +164,7 @@ fn determine_assets_to_swap(
 }
 
 /// Calculate the actual weight of the asset
-/// (asset(s) vaule / total pool value) * 100
+/// (asset(s) value / total pool value) * 100
 fn calc_actual_weight(
     deps: &DepsMut,
     balancer: &BalancerApp,
