@@ -1,7 +1,7 @@
 use abstract_app::AppError;
 use abstract_sdk::{core::AbstractError, AbstractSdkError};
 use cosmwasm_std::{CheckedFromRatioError, Decimal, DecimalRangeExceeded, OverflowError, StdError};
-use cw_asset::AssetError;
+use cw_asset::{AssetError, AssetInfo};
 use cw_controllers::AdminError;
 use thiserror::Error;
 
@@ -46,6 +46,9 @@ pub enum BalancerError {
     #[error("The asset you wished to add: {} is already part of the vector", asset)]
     AssetAlreadyPresent { asset: String },
 
+    #[error("The asset you wished to add: {} is not registered on the account", asset)]
+    AssetNotRegistered { asset: AssetInfo },
+
     #[error("The provided token is not the base token")]
     WrongToken {},
 
@@ -80,6 +83,6 @@ pub enum BalancerError {
     #[error("Max out ratio")]
     MaxOutRatio {},
 
-    #[error("Empty pool")]
-    EmptyPool {},
+    #[error("Valueless account")]
+    ValuelessAccount {},
 }

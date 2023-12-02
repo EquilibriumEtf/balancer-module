@@ -1,5 +1,5 @@
 use abstract_sdk::core::objects::dependency::StaticDependency;
-use dex::EXCHANGE;
+use abstract_dex_adapter::EXCHANGE;
 
 const DEX_DEP: StaticDependency = StaticDependency::new(EXCHANGE, &[">=0.3.0"]);
 

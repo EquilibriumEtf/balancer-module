@@ -1,15 +1,15 @@
 [package]
 # TODO rename
-name                  = "abstract-balancer-app"
-version.workspace     = true
-authors.workspace     = true
+name = "abstract-balancer-app"
+version.workspace = true
+authors.workspace = true
 description.workspace = true
-edition               = "2021"
+edition = "2021"
 
 exclude = [
-  # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
-  "contract.wasm",
-  "hash.txt",
+    # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
+    "contract.wasm",
+    "hash.txt",
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,14 +19,15 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["export"]
-export  = []
-interface    = ["export", "cw-orch"]
+export = []
+interface = ["export", "dep:cw-orch", "dep:abstract-interface"]
+schema = ["abstract-app/schema"]
 
 [dependencies]
 cosmwasm-std = { version = "1.2" }
-abstract-core = {  version = "0.19.2" }
+abstract-core = { version = "0.19.2" }
 abstract-sdk = { version = "0.19.2" }
-cw-asset = {version = "3.0.0"}
+cw-asset = { version = "3.0.0" }
 cw-controllers = { version = "1.1.1" }
 cosmwasm-schema = { version = "1.1" }
 cw-storage-plus = "1.0.1"
@@ -38,15 +39,18 @@ thiserror = { version = "1.0.21" }
 semver = "1.0.0"
 lazy_static = "1.4.0"
 abstract-app = { version = "0.19.2" }
-schemars        = "0.8.12"
+schemars = "0.8.12"
 abstract-dex-adapter = { git = "https://github.com/AbstractSDK/abstract.git", tag = "v0.19.2", default-features = false }
-cw-orch       = { version = "0.16.5", optional = true }
+cw-orch = { version = "0.16.5", optional = true }
+abstract-interface = { version = '0.19.2', optional = true }
 
 [dev-dependencies]
-balancer ={ path = ".", package = "abstract-balancer-app", features = ["interface"]}
-cw-orch = { version = "0.16.5", features = ["daemon"]}
+balancer = { path = ".", package = "abstract-balancer-app", features = ["interface"] }
+cw-orch = { version = "0.16.5", features = ["daemon"] }
 cw-plus-interface = { git = "https://github.com/AbstractSDK/cw-plus.git", version = "0.1.0", rev = "258fb95" }
-abstract-interface = {version = '0.19.2'}
+
+abstract-testing = { version = '0.19.2' }
+abstract-sdk = { version = '0.19.2', features = ["test-utils"] }
 log = "0.4.14"
 cosmwasm-std = { version = "1.2" }
 anyhow = "1.0"
@@ -55,4 +59,11 @@ serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 dotenv = "0.15.0"
 env_logger = "0.10.0"
 semver = { version = "1.0.13", default-features = false }
-tokio = {version = "*", features = ["full"] }
+tokio = { version = "*", features = ["full"] }
+wyndex-bundle = { git = "https://github.com/AbstractSDK/abstract.git", tag = "v0.19.2", default-features = false }
+abstract-dex-adapter = { git = "https://github.com/AbstractSDK/abstract.git", tag = "v0.19.2", features = [
+    "interface",
+    "juno",
+    "testing",
+] }
+speculoos = "0.11.0"

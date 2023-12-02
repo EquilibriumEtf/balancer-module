@@ -32,6 +32,9 @@ use abstract_sdk::core::app;
 use abstract_sdk::core::objects::AssetEntry;
 use cosmwasm_schema::QueryResponses;
 use cosmwasm_std::Decimal;
+use crate::contract::BalancerApp;
+
+abstract_app::app_msg_types!(BalancerApp, BalancerExecuteMsg, BalancerQueryMsg);
 
 pub const BALANCER: &str = "equilibrium:balancer";
 
@@ -45,9 +48,6 @@ pub struct WeightedAsset {
 #[cosmwasm_schema::cw_serde]
 pub struct BalancerMigrateMsg {}
 
-/// Impls for being able to call methods on the autocompounder app directly
-impl app::AppExecuteMsg for BalancerExecuteMsg {}
-impl app::AppQueryMsg for BalancerQueryMsg {}
 
 /// Init msg
 #[cosmwasm_schema::cw_serde]
@@ -55,12 +55,15 @@ pub struct BalancerInstantiateMsg {
     /// Weights of the assets in the etf
     pub asset_weights: Vec<(AssetEntry, WeightedAsset)>,
     /// The allowed deviation from the target ratio
+    /// TODO: make optional
     pub deviation: Decimal,
     /// The dex to use for swaps
     pub dex: String,
 }
 
 #[cosmwasm_schema::cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
+#[cfg_attr(feature = "interface", impl_into(ExecuteMsg))]
 pub enum BalancerExecuteMsg {
     /// Rebalance the etf
     Rebalance {},
@@ -77,6 +80,8 @@ pub enum BalancerExecuteMsg {
 }
 
 #[cosmwasm_schema::cw_serde]
+#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
+#[cfg_attr(feature = "interface", impl_into(QueryMsg))]
 #[derive(QueryResponses)]
 pub enum BalancerQueryMsg {
     /// Returns [`ConfigResponse`]

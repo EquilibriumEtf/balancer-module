@@ -1,16 +1,14 @@
 use std::collections::BTreeMap;
 use std::iter;
 use std::str::FromStr;
+use abstract_core::objects::AnsAsset;
 use abstract_dex_adapter::DexInterface;
 
 use abstract_sdk::core::objects::AssetEntry;
 use abstract_sdk::core::proxy::OracleAsset;
 use abstract_sdk::features::AbstractNameService;
 use abstract_sdk::{AccountingInterface};
-use cosmwasm_std::{
-    Addr, Decimal, Decimal256, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
-    Uint256,
-};
+use cosmwasm_std::{Addr, Decimal, Decimal256, Deps, DepsMut, ensure, Env, MessageInfo, Response, StdResult, Uint128, Uint256};
 use cw_asset::AssetInfo;
 use abstract_dex_adapter::msg::{AskAsset, OfferAsset};
 
@@ -51,12 +49,24 @@ pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, balancer: BalancerApp) -
     let base_state = balancer.load_state(deps.storage)?;
 
     // Retrieve the enabled assets
-    let (assets, _): (Vec<AssetInfo>, Vec<OracleAsset>) =
+    let assets_list: (Vec<AssetInfo>, Vec<OracleAsset>) =
         accountant.assets_list()?.assets.into_iter().unzip();
+    let assets = assets_list.0.clone();
+
+    println!("Assets: {:?}", assets);
+
+    // if there are no assets, no action is necessary
+    if assets.is_empty() {
+        return Ok(Response::default());
+    }
+
     // reverse lookup for the asset names
-    let asset_names = balancer
-        .ans_host(deps.as_ref())?
+    let ans_host = balancer
+        .ans_host(deps.as_ref())?;
+
+    let asset_names = ans_host
         .query_assets_reverse(&deps.querier, &assets)?;
+
     let assets = BTreeMap::from_iter(iter::zip(asset_names, assets));
     let (offer_assets, ask_assets) = determine_assets_to_swap(
         &deps,
@@ -65,14 +75,38 @@ pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, balancer: BalancerApp) -
         max_deviation,
         assets,
     )?;
+
+    deps.api.debug(&format!("Offer: {:?}", offer_assets.clone()));
+    deps.api.debug(&format!("Ask: {:?}", offer_assets.clone()));
+
+
     let exchange = balancer.dex(deps.as_ref(), dex);
-    let swap_msg = exchange.custom_swap(
-        offer_assets,
-        ask_assets,
-        None,
-        Some(abstract_dex_adapter::msg::SwapRouter::Matrix),
-    )?;
-    Ok(Response::new().add_message(swap_msg))
+
+    let base_asset = accountant.base_asset()?;
+    let base_asset = ans_host.query_asset_reverse(&deps.querier, &base_asset.base_asset)?;
+
+    // sell all offers for base, and buy all asks with base
+    let mut swaps = vec![];
+
+    for offer in offer_assets {
+        // let simulate = exchange.simulate_swap(offer, base_asset.clone())?;
+
+        swaps.push(exchange.swap(offer, base_asset.clone(), None, None)?);
+    }
+
+    for ask in ask_assets {
+        // simulate swapping ask for base, then do reverse swap with amount?
+        let simulate = exchange.simulate_swap(ask.clone(), base_asset.clone())?;
+
+        deps.api.debug(&format!("Simulated: {:?}", simulate.clone()));
+
+        swaps.push(exchange.swap(AnsAsset {
+            name: base_asset.clone(),
+            amount: simulate.return_amount,
+        }, ask.name.clone(), Some(Decimal::new(simulate.spread_amount)), None)?)
+    }
+
+    Ok(Response::new().add_messages(swaps))
 }
 
 /// Return arrays of offer and ask assets (those to sell and those to buy)
@@ -85,11 +119,11 @@ fn determine_assets_to_swap(
 ) -> Result<(Vec<OfferAsset>, Vec<AskAsset>), BalancerError> {
     let accountant = balancer.accountant(deps.as_ref());
     // Get the total value of the assets
-    let pool_value = accountant.query_total_value()?.total_value.amount;
+    let account_Value = accountant.query_total_value()?.total_value.amount;
 
-    // Empty pools are fully balanced
-    if pool_value.is_zero() {
-        return Err(BalancerError::EmptyPool {}.into());
+    // Empty accounts are fully balanced
+    if account_Value.is_zero() {
+        return Err(BalancerError::ValuelessAccount {}.into());
     }
 
     let mut offer_assets: Vec<OfferAsset> = Vec::new();
@@ -97,16 +131,41 @@ fn determine_assets_to_swap(
 
     for (asset_entry, asset_info) in assets {
         // actual weight of the asset (percent)
-        let actual_weight = calc_actual_weight(deps, &balancer, pool_value, asset_entry.clone())?;
+        let actual_weight = calc_actual_weight(deps, &balancer, account_Value, asset_entry.clone())?;
+
+        deps.api.debug(&format!("Asset: {:?}, weight: {:?}", asset_entry.clone(), actual_weight.clone()));
 
         let asset_balance = Decimal256::from_atomics(
             Uint256::from_uint128(asset_info.query_balance(&deps.querier, &proxy_address)?),
             6,
         )
-        .unwrap();
+            .unwrap();
 
         // Load the expected normalized weight (percentage)
         let expected_weight = calc_normalized_weight(deps.as_ref(), asset_entry.clone())?;
+
+        if actual_weight.is_zero() {
+            let single_token_value = accountant.asset_value(asset_entry.clone())?;
+
+            deps.api.debug(&format!("single_token_value: {:?}", single_token_value.clone()));
+
+            // Weight of a single asset (in percent)
+            // Ex: 1 JUNO == 5, Pool == 20, 5/20 = 0.25 (25%)
+            let single_asset_weight = Decimal256::from_ratio(single_token_value, account_Value);
+
+            deps.api.debug(&format!("single_asset_weight: {:?}", single_asset_weight.clone()));
+
+            // Expected
+            // Ex: Expected: 0.50 (50%) / 0.25 (25%) = 2 tokens to buy - existing balance (likely close to zero)
+            let buy_amount = expected_weight
+                .checked_div(single_asset_weight)?;
+
+            let amount: Uint128 =
+                Decimal::from_str(&buy_amount.to_string()).unwrap() * Uint128::one();
+
+            ask_assets.push(AnsAsset::new(asset_entry, amount));
+            continue
+        }
 
         // (Expected / Actual) Weight
         let weight_ratio: Decimal256 = expected_weight.checked_div(actual_weight)?;
@@ -144,7 +203,7 @@ fn determine_assets_to_swap(
 
                 // Weight of a single asset (in percent)
                 // Ex: 1 JUNO == 5, Pool == 20, 5/20 = 0.25 (25%)
-                let single_asset_weight = Decimal256::from_ratio(single_token_value, pool_value);
+                let single_asset_weight = Decimal256::from_ratio(single_token_value, account_Value);
                 // Expected
                 // Ex: Expected: 0.50 (50%) / 0.25 (25%) = 2 tokens to buy - existing balance (likely close to zero)
                 expected_weight
@@ -195,7 +254,7 @@ fn calc_normalized_weight(deps: Deps, asset: AssetEntry) -> Result<Decimal256, B
 pub fn update_asset_weights(
     deps: DepsMut,
     _msg_info: MessageInfo,
-    _dapp: BalancerApp,
+    dapp: BalancerApp,
     to_add: Option<Vec<(AssetEntry, WeightedAsset)>>,
     to_remove: Option<Vec<AssetEntry>>,
 ) -> BalancerResult {
@@ -221,6 +280,15 @@ pub fn update_asset_weights(
 
     // Add the new weights
     if let Some(new_weights) = to_add {
+        // check that all the to_add exist in ans
+        let new_entries = new_weights.clone().into_iter().map(|(e, _)| e.clone()).collect::<Vec<AssetEntry>>();
+        let resolved_entries = dapp.ans_host(deps.as_ref())?.query_assets(&deps.querier, &new_entries)?;
+
+        let registered_assets: Vec<AssetInfo> = dapp.accountant(deps.as_ref()).assets_list()?.assets.into_iter().map(|(a, _)| a).collect();
+        for resolved in resolved_entries {
+            ensure!(registered_assets.contains(&resolved), BalancerError::AssetNotRegistered { asset: resolved });
+        }
+
         for new_weight in new_weights.into_iter() {
             ASSET_WEIGHTS.update(
                 deps.storage,
