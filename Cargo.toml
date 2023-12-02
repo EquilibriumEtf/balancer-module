@@ -4,6 +4,8 @@ members = [
   "contracts",
 ]
 
+resolver = "2"
+
 [workspace.package]
 version = "0.0.1"
 authors = ["CyberHoward"]

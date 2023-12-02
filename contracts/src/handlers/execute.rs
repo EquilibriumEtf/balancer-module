@@ -1,18 +1,18 @@
 use std::collections::BTreeMap;
 use std::iter;
 use std::str::FromStr;
+use abstract_dex_adapter::DexInterface;
 
 use abstract_sdk::core::objects::AssetEntry;
 use abstract_sdk::core::proxy::OracleAsset;
 use abstract_sdk::features::AbstractNameService;
-use abstract_sdk::VaultInterface;
+use abstract_sdk::{AccountingInterface};
 use cosmwasm_std::{
     Addr, Decimal, Decimal256, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
     Uint256,
 };
 use cw_asset::AssetInfo;
-use dex::api::DexInterface;
-use dex::msg::{AskAsset, OfferAsset};
+use abstract_dex_adapter::msg::{AskAsset, OfferAsset};
 
 use crate::contract::{BalancerApp, BalancerResult};
 use crate::error::BalancerError;
@@ -46,13 +46,13 @@ pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, balancer: BalancerApp) -
     let dex = config.dex;
     let max_deviation = config.max_deviation;
 
-    let vault = balancer.vault(deps.as_ref());
+    let accountant = balancer.accountant(deps.as_ref());
 
     let base_state = balancer.load_state(deps.storage)?;
 
     // Retrieve the enabled assets
     let (assets, _): (Vec<AssetInfo>, Vec<OracleAsset>) =
-        vault.assets_list()?.assets.into_iter().unzip();
+        accountant.assets_list()?.assets.into_iter().unzip();
     // reverse lookup for the asset names
     let asset_names = balancer
         .ans_host(deps.as_ref())?
@@ -70,7 +70,7 @@ pub fn rebalance(deps: DepsMut, _msg_info: MessageInfo, balancer: BalancerApp) -
         offer_assets,
         ask_assets,
         None,
-        Some(dex::msg::SwapRouter::Matrix),
+        Some(abstract_dex_adapter::msg::SwapRouter::Matrix),
     )?;
     Ok(Response::new().add_message(swap_msg))
 }
@@ -83,9 +83,9 @@ fn determine_assets_to_swap(
     max_deviation: Decimal,
     assets: BTreeMap<AssetEntry, AssetInfo>,
 ) -> Result<(Vec<OfferAsset>, Vec<AskAsset>), BalancerError> {
-    let vault = balancer.vault(deps.as_ref());
+    let accountant = balancer.accountant(deps.as_ref());
     // Get the total value of the assets
-    let pool_value = vault.query_total_value()?.total_value.amount;
+    let pool_value = accountant.query_total_value()?.total_value.amount;
 
     // Empty pools are fully balanced
     if pool_value.is_zero() {
@@ -140,7 +140,7 @@ fn determine_assets_to_swap(
             // If we are below the minimum threshold, our fixed_point calculation could be off due to overflow,
             // so we need to query the explicit value of the asset
             let buy_amount = if actual_weight.lt(&Decimal256::percent(MINIMUM_WEIGHT_THRESHOLD)) {
-                let single_token_value = vault.asset_value(asset_entry.clone())?;
+                let single_token_value = accountant.asset_value(asset_entry.clone())?;
 
                 // Weight of a single asset (in percent)
                 // Ex: 1 JUNO == 5, Pool == 20, 5/20 = 0.25 (25%)
@@ -171,7 +171,7 @@ fn calc_actual_weight(
     pool_value: Uint128,
     asset_name: AssetEntry,
 ) -> Result<Decimal256, BalancerError> {
-    let holding_value = balancer.vault(deps.as_ref()).asset_value(asset_name)?;
+    let holding_value = balancer.accountant(deps.as_ref()).asset_value(asset_name)?;
 
     // Actual weight in percentage
     let actual_weight = Decimal256::from_ratio(holding_value, pool_value);
